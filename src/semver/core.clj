@@ -1,5 +1,8 @@
 (ns semver.core)
 
+;; A Clojure implementation of the semver specification
+;; A library for parsing and sorting semantic version
+
 (defrecord Version [major minor patch pre-release metadata])
 
 (def ^{:private true} semver
@@ -21,25 +24,42 @@
           patch-version (Integer/parseInt patch 10)]
       (Version. major-version minor-version patch-version pre-release metadata))))
 
-(defn pre-release? [version]
+(defn pre-release?
+  "Returns true if the input version is a pre-release i.e 1.2.3-alpha.1"
+  [version]
   (some? (:pre-release version)))
 
-(defn snapshot? [version]
+(defn snapshot?
+  "Returns true if the input version is a snapshot else false"
+  [version]
   (= "SNAPSHOT" (:pre-release version)))
 
-;; Rules
-;; Build metadata does not figure into precedence
-;; Precedence is determined by the first difference when comparing each of these identifiers from left to right
-;; as follows: Major, minor, and patch versions are always compared numerically.
-;; Example: 1.0.0 < 2.0.0 < 2.1.0 < 2.1.1.
-;; When major, minor, and patch are equal, a pre-release version has lower precedence than a normal version.
-;; a pre-release version has lower precedence than a normal version.
-;; Precedence for two pre-release versions with the same major, minor, and patch version MUST be determined by comparing each dot separated identifier from left to right until a difference is found as follows: identifiers consisting of only digits are compared numerically and identifiers with letters or hyphens are compared lexically in ASCII sort order. Numeric identifiers always have lower precedence than non-numeric identifiers. A larger set of pre-release fields has a higher precedence than a smaller set, if all of the preceding identifiers are equal
+(defn compare-split-parts
+  "Precedence for two pre-release versions with the same major, minor, and patch version MUST
+   be determined by comparing each dot separated identifier from left to right until a difference is
+   found as follows: identifiers consisting of only digits are compared numerically and
+   identifiers with letters or hyphens are compared lexically in ASCII sort order.
+   Numeric identifiers always have lower precedence than non-numeric identifiers.
+   A larger set of pre-release fields has a higher precedence than a smaller set,
+   if all of the preceding identifiers are equal"
+  [x y])
 
-;; TODO
-(defn compare-pre-release [x y] 0)
+(defn compare-pre-release [x y]
+  ;; When major, minor, and patch are equal, a pre-release version has lower precedence than a normal version
+  (cond
+    (and (nil? x) (some? y)) 1
+    (and (nil? x) (nil? y)) 0
+    (and (some? x) (nil? y)) -1
+    ;; Comparing each dot separated identifier from left to right until a difference is found
+    :else 0)) ;; TODO (compare-split-parts x y)))
 
-(defn compare-semver [v1 v2]
+(defn compare-semver
+  "Compare two semantic versions
+   Build metadata does not figure into precedence
+   Precedence is determined by the first difference when comparing each of these identifiers from left to right
+   as follows: Major, minor, and patch versions are always compared numerically.
+   Example: 1.0.0 < 2.0.0 < 2.1.0 < 2.1.1"
+  [v1 v2]
   (if (= (:major v1) (:major v2))
     (if (= (:minor v1) (:minor v2))
       (if (= (:patch v1) (:patch v2))
@@ -64,12 +84,6 @@
   "Returns true if v1 is equal to v2 else false"
   [v1 v2]
   (zero? (compare-semver v1 v2)))
-
-;; Misc
-
-(defn increment-major [version])
-(defn increment-minor [version])
-(defn increment-patch [version])
 
 ;; Sorting
 (defn sort-by-semver [versions])
