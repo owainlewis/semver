@@ -1,8 +1,8 @@
 (ns semver.core)
-
 ;; A Clojure implementation of the semver specification
+;;
 ;; A library for parsing and sorting semantic version
-
+;;
 (defrecord Version [major minor patch pre-release metadata])
 
 (def ^{:private true} semver
@@ -34,6 +34,14 @@
   [version]
   (= "SNAPSHOT" (:pre-release version)))
 
+(defn compare-part
+  "identifiers consisting of only digits are compared numerically and
+   identifiers with letters or hyphens are compared lexically in ASCII sort order.
+   Numeric identifiers always have lower precedence than non-numeric identifiers."
+  [x y]
+  ;; TODO
+  0)
+
 (defn compare-split-parts
   "Precedence for two pre-release versions with the same major, minor, and patch version MUST
    be determined by comparing each dot separated identifier from left to right until a difference is
@@ -42,16 +50,32 @@
    Numeric identifiers always have lower precedence than non-numeric identifiers.
    A larger set of pre-release fields has a higher precedence than a smaller set,
    if all of the preceding identifiers are equal"
-  [x y])
+  [x y]
+  (let [[x-parts y-parts] (map (fn [s]
+                                 (->> (clojure.string/split s #"[.]")
+                                      (remove clojure.string/blank?)))
+                                      [x y])]
+    (loop [xs x-parts ys y-parts]
+      (cond
+        (and (empty? xs) (seq? ys)) 1
+        (and (empty? xs) (empty? ys)) 0
+        (and (seq xs) (empty? ys)) -1
+        :else
+          (let [fx (first xs) fy (first ys)]
+            (if (= fx fy)
+              ;; If they are equal move on to the next part
+              (recur (rest xs) (rest ys))
+              ;; If they are not equal compare them
+              (compare-part fx fy)))))))
 
 (defn compare-pre-release [x y]
   ;; When major, minor, and patch are equal, a pre-release version has lower precedence than a normal version
   (cond
     (and (nil? x) (some? y)) 1
     (and (nil? x) (nil? y)) 0
-    (and (some? x) (nil? y)) -1
+    (and (some? x) (y nil?)) -1
     ;; Comparing each dot separated identifier from left to right until a difference is found
-    :else 0)) ;; TODO (compare-split-parts x y)))
+    :else (compare-split-parts x y)))
 
 (defn compare-semver
   "Compare two semantic versions
