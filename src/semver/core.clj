@@ -83,15 +83,10 @@
       (compare (:minor v1) (:minor v2)))
     (compare (:major v1) (:major v2))))
 
-;; Public API
-;; *****************************************************************
-
 (defn compare-strings
   "Compare two version"
   [v1 v2]
   (compare-semver (parse v1) (parse v2)))
-
-;; Comparision
 
 (defn newer?
   "Returns true if v1 is newer than v2 else false"
@@ -114,7 +109,6 @@
           :pre-release
           (is-snapshot?))))
 
-;; Sorting
 (defn sort-by-semver
   "Given a list of semantic version strings, compare them and return them in sorted order"
   [versions]
