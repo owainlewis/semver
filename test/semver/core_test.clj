@@ -23,10 +23,15 @@
   (testing "should return nil for invalid semver"
     (is (nil? (parse "1.2")))))
 
-(deftest pre-release?-test
-  (testing "should return true if version has pre-release tag")
-  (testing "should return false if version does not have pre-release tag"))
-
 (deftest snapshot?-test
-  (testing "should return true if version is snapshot")
-  (testing "should return false if version is not snapshot"))
+  (testing "should return true if version is snapshot"
+    (is (snapshot? "1.0.0-SNAPSHOT")))
+  (testing "should return false if version is not snapshot"
+    (is (not (snapshot? "1.0.0-alpha.1")))))
+
+(deftest newer?-test
+  (testing "should return true if the first version is newer than the second version"
+    (is (newer? "1.0.1" "1.0.0"))
+    (is (newer? "2.0.1" "1.0.1"))
+    (is (newer? "2.0.0" "1.0.0-alpha.1"))
+    (is (newer? "1.1.0" "1.0.5"))))
