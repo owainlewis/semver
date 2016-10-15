@@ -57,8 +57,9 @@
   [version]
   (= "SNAPSHOT" version))
 
-(defn- compare-pre-release [x y]
-  ;; When major, minor, and patch are equal, a pre-release version has lower precedence than a normal version
+(defn- compare-pre-release
+  "When major, minor, and patch are equal, a pre-release version has lower precedence than a normal version"
+  [x y]
   (cond
     (and (is-snapshot? x) (not (is-snapshot? y))) -1
     (and (not (is-snapshot? x)) (is-snapshot? y)) 1
