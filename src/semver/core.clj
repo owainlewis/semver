@@ -7,13 +7,13 @@
 
 (defn valid?
   "Returns true if an input string is a valid semantic version string"
-  [version]
+  [^String version]
   (boolean (re-matches semver version)))
 
 (defn parse
   "Parse a semantic version string returning nil if the input is invalid
    or a Version if the input is valid"
-  [version]
+  [^String version]
   (when (valid? version)
     (let [[[_ major minor patch pre-release metadata]] (re-seq semver version)
           major-version (Integer/parseInt major 10)
@@ -85,7 +85,7 @@
     (compare (:major v1) (:major v2))))
 
 (defn compare-strings
-  "Compare two version"
+  "Compare two semantic version strings"
   [v1 v2]
   (compare-semver (parse v1) (parse v2)))
 

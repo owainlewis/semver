@@ -1,4 +1,5 @@
-(ns semver.modifiers)
+(ns semver.modifiers
+  (:require [semver.core :as core]))
 
 (defn increment-major
   "Returns a copy of a given version with the major version icremented"
