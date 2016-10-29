@@ -4,8 +4,8 @@ A Clojure implementation of the Semantic Versioning spec. This library allows yo
 
 ## Usage
 
-```
-(ns 'foo'
+```clojure
+(ns 'foo
   (:require [semver.core :as s]))
 
 ;; Sorting
