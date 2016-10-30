@@ -1,5 +1,7 @@
 # semver
 
+[![CircleCI](https://circleci.com/gh/owainlewis/semver.svg?style=svg)](https://circleci.com/gh/owainlewis/semver)
+
 A pure Clojure implementation of the Semantic Versioning spec.
 
 *This library allows you to easily parse, validate, sort and modify semantic version strings.*
