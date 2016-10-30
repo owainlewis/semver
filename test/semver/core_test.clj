@@ -7,8 +7,7 @@
   "1.0.0"
   "1.0.2-SNAPSHOT"
   "0.3.4-alpha.rc.1"
-  "1.0.1-SNAPSHOT+meta"
-])
+  "1.0.1-SNAPSHOT+meta"])
 
 (def invalid-versions ["1.3", "3-alpha"])
 
