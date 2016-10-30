@@ -6,6 +6,12 @@ A pure Clojure implementation of the Semantic Versioning spec.
 
 http://semver.org
 
+## Getting started
+
+https://clojars.org/io.forward/semver
+
+[![Clojars Project](https://img.shields.io/clojars/v/io.forward/semver.svg)](https://clojars.org/io.forward/semver)
+
 ## Usage
 
 All the examples below assume you have included the semver library like this:
