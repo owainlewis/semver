@@ -33,7 +33,7 @@ All the examples below assume you have included the semver library like this:
 
 ### Sorting a list of version strings
 
-If you want to sort a list of semantic version strings you can use the `sorted` method to do this.
+If you want to sort a list of semantic version strings you can use the `sorted` function to do this.
 
 ```clojure
 (s/sorted ["1.2.3", "1.2.3-SNAPSHOT", "2.0.0", "0.1.0-beta3"])
@@ -43,7 +43,7 @@ If you want to sort a list of semantic version strings you can use the `sorted` 
 
 ### Validation
 
-You can use the valid? function to check if an input string is a valid semantic version
+You can use the `valid?` function to check if an input string is a valid semantic version
 
 ```clojure
 (s/valid? "1.2.3-beta1") ;; => true
@@ -53,7 +53,7 @@ You can use the valid? function to check if an input string is a valid semantic 
 
 ### Transforming a version string
 
-A selection of modifiers are available to make it easy to modify version strings in a consistent manner.
+A selection of modifiers are available to make it easy to modify version strings in a consistent manner. Simply pass a modifier function to the `transform` function.
 
 ```clojure
 (s/transform "1.0.0" s/increment-minor) ;; => "1.1.0"
