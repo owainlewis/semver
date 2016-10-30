@@ -21,6 +21,19 @@
           patch-version (Integer/parseInt patch 10)]
       (Version. major-version minor-version patch-version pre-release metadata))))
 
+(defn render
+  "Takes a semantic version type and renders it back as a string"
+  [^Version version]
+  (let [{:keys [major minor patch pre-release metadata]} version]
+    (cond
+      (boolean (and (some? major) (some? minor) (some? patch) (some? pre-release) (some? metadata)))
+        (apply (partial format "%s.%s.%s-%s+%s") [major minor patch pre-release metadata])
+      (boolean (and (some? major) (some? minor) (some? patch) (some? pre-release) (nil? metadata)))
+        (apply (partial format "%s.%s.%s-%s") [major minor patch pre-release])
+      (boolean (and (some? major) (some? minor) (some? patch) (nil? pre-release) (nil? metadata)))
+        (apply (partial format "%s.%s.%s") [major minor patch])
+      :default nil)))
+
 (defn- compare-part
   "identifiers consisting of only digits are compared numerically and
    identifiers with letters or hyphens are compared lexically in ASCII sort order.
@@ -54,8 +67,8 @@
 
 (defn- is-snapshot?
   "Returns true if the input version is a snapshot else false"
-  [version]
-  (= "SNAPSHOT" version))
+  [pre-release]
+  (= "SNAPSHOT" pre-release))
 
 (defn- compare-pre-release
   "When major, minor, and patch are equal, a pre-release version has lower precedence than a normal version"
@@ -86,31 +99,58 @@
 
 (defn compare-strings
   "Compare two semantic version strings"
-  [v1 v2]
+  [^String v1 ^String v2]
   (compare-semver (parse v1) (parse v2)))
 
 (defn newer?
   "Returns true if v1 is newer than v2 else false"
-  [v1 v2]
+  [^String v1 ^String v2]
   (pos? (compare-strings v1 v2)))
 
 (defn older?
   "Returns true if v1 is older than v2 else false"
-  [v1 v2]
+  [^String v1 ^String v2]
   (neg? (compare-strings v1 v2)))
 
 (defn equal?
   "Returns true if v1 is equal to v2 else false"
-  [v1 v2]
+  [^String v1 ^String v2]
   (zero? (compare-strings v1 v2)))
 
-(defn snapshot? [version]
+(defn snapshot? [^String version]
   (boolean
-  (cond-> (parse version)
-          :pre-release
-          (is-snapshot?))))
+    (when-let [pr (:pre-release (parse version))]
+      (is-snapshot? pr))))
 
-(defn sort-by-semver
+(defn sorted
   "Given a list of semantic version strings, compare them and return them in sorted order"
   [versions]
   (sort newer? versions))
+
+(defn increment-major
+  "Returns a copy of a given version with the major version icremented"
+  [^Version version]
+  (update version :major inc))
+
+(defn increment-minor
+  "Returns a copy of the given version with the minor version incremented"
+  [^Version version]
+  (update version :minor inc))
+
+(defn increment-patch
+  "Returns a copy of the given version with the patch version incremented"
+  [^Version version]
+  (update version :patch inc))
+
+(defn transform
+  "Transform a version string by applying a modifier function
+
+   This might typically be used to alter the version in some way like incrementing a version part
+   or adding something to the metadata or pre-release parts
+
+   Example:
+     (transform \"1.0.0\" increment-major)
+  "
+  [modifier version]
+  (when-let [parsed-version (parse version)]
+    (render (apply modifier [parsed-version]))))
