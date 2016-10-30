@@ -4,6 +4,8 @@ A pure Clojure implementation of the Semantic Versioning spec.
 
 *This library allows you to easily parse, validate, sort and modify semantic version strings.*
 
+http://semver.org
+
 ## Usage
 
 All the examples below assume you have included the semver library like this:
