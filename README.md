@@ -56,8 +56,8 @@ You can use the `valid?` function to check if an input string is a valid semanti
 A selection of modifiers are available to make it easy to modify version strings in a consistent manner. Simply pass a modifier function to the `transform` function.
 
 ```clojure
-(s/transform "1.0.0" s/increment-minor) ;; => "1.1.0"
-(s/transform "1.0.0" s/increment-major) ;; => "2.0.0"
+(s/transform s/increment-minor "1.0.0" ) ;; => "1.1.0"
+(s/transform s/increment-major "1.0.0" ) ;; => "2.0.0"
 ```
 
 ## License
