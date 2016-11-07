@@ -35,7 +35,7 @@
       :default nil)))
 
 (defn- compare-part
-  "identifiers consisting of only digits are compared numerically and
+  "Identifiers consisting of only digits are compared numerically and
    identifiers with letters or hyphens are compared lexically in ASCII sort order.
    Numeric identifiers always have lower precedence than non-numeric identifiers."
   [x y]
