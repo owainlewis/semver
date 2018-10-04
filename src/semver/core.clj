@@ -130,12 +130,17 @@
 (defn increment-major
   "Returns a copy of a given version with the major version icremented"
   [^Version version]
-  (update version :major inc))
+  (-> version
+      (update :major inc)
+      (assoc :minor 0)
+      (assoc :patch 0)))
 
 (defn increment-minor
   "Returns a copy of the given version with the minor version incremented"
   [^Version version]
-  (update version :minor inc))
+  (-> version
+      (update :minor inc)
+      (assoc :patch 0)))
 
 (defn increment-patch
   "Returns a copy of the given version with the patch version incremented"
