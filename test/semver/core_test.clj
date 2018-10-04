@@ -1,5 +1,5 @@
 (ns semver.core-test
-  (:require [clojure.test :refer [deftest testing is]]
+  (:require [clojure.test :refer [deftest testing is are]]
             [semver.core :as s])
   (:import [semver.core Version]))
 
@@ -49,3 +49,12 @@
     (is (= (s/render (s/parse "1.0.0-beta+foo")) "1.0.0-beta+foo"))
     (is (= (s/render (s/parse "1.0.0-SNAPSHOT")) "1.0.0-SNAPSHOT"))
     (is (= (s/render (s/parse "1.0.0")) "1.0.0"))))
+
+(deftest transform-test
+  (testing "Should increment versions correctly"
+    (are [version incr-fn desired-version] (= desired-version (s/transform incr-fn version))
+
+      "0.0.1" s/increment-patch "0.0.2"
+      "0.1.0" s/increment-minor "0.2.0"
+      "0.1.1" s/increment-minor "0.2.0"
+      "0.1.10" s/increment-major "1.0.0")))
