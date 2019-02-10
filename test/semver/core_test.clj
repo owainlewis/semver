@@ -1,6 +1,6 @@
 (ns semver.core-test
-  (:require [clojure.test :refer :all]
-            [semver.core :refer :all])
+  (:require [clojure.test :refer [deftest testing is are]]
+            [semver.core :as s])
   (:import [semver.core Version]))
 
 (def valid-versions [
@@ -13,39 +13,48 @@
 
 (deftest valid?-test
   (testing "should return true for valid semvers"
-    (is (every? true? (map valid? valid-versions))))
+    (is (every? true? (map s/valid? valid-versions))))
   (testing "should return false for invalid semvers"
-    (is (every? false? (map valid? invalid-versions)))))
+    (is (every? false? (map s/valid? invalid-versions)))))
 
 (deftest parse-test
   (testing "should parse valid semver"
-    (is (instance? Version (parse "1.2.3-foo+bar")))
-    (is (instance? Version (parse "1.2.3-SNAPSHOT")))
-    (is (instance? Version (parse "1.2.3-alpha.1+foo.bar")))
-    (is (instance? Version (parse "1.2.3"))))
+    (is (instance? Version (s/parse "1.2.3-foo+bar")))
+    (is (instance? Version (s/parse "1.2.3-SNAPSHOT")))
+    (is (instance? Version (s/parse "1.2.3-alpha.1+foo.bar")))
+    (is (instance? Version (s/parse "1.2.3"))))
   (testing "should return nil for invalid semver"
-    (is (nil? (parse "1.2")))))
+    (is (nil? (s/parse "1.2")))))
 
 (deftest snapshot?-test
   (testing "should return true if version is snapshot"
-    (is (snapshot? "1.0.0-SNAPSHOT")))
+    (is (s/snapshot? "1.0.0-SNAPSHOT")))
   (testing "should return false if version is not snapshot"
-    (is (not (snapshot? "1.0.0-alpha.1")))))
+    (is (not (s/snapshot? "1.0.0-alpha.1")))))
 
 (deftest newer?-test
   (testing "should return true if the first version is newer than the second version"
-    (is (newer? "1.0.1" "1.0.0"))
-    (is (newer? "2.0.1" "1.0.1"))
-    (is (newer? "2.0.0" "1.0.0-alpha.1"))
-    (is (newer? "1.1.0" "1.0.5"))))
+    (is (s/newer? "1.0.1" "1.0.0"))
+    (is (s/newer? "2.0.1" "1.0.1"))
+    (is (s/newer? "2.0.0" "1.0.0-alpha.1"))
+    (is (s/newer? "1.1.0" "1.0.5"))))
 
 (deftest sorted-test
   (testing "should sort a list of versions start with newest first"
-    (is (= (sorted ["1.0.2" "1.0.1-SNAPSHOT" "1.0.1" "1.3.0"])
+    (is (= (s/sorted ["1.0.2" "1.0.1-SNAPSHOT" "1.0.1" "1.3.0"])
            ["1.3.0" "1.0.2" "1.0.1" "1.0.1-SNAPSHOT"]))))
 
 (deftest render-test
   (testing "should convert from version to string"
-    (is (= (render (parse "1.0.0-beta+foo")) "1.0.0-beta+foo"))
-    (is (= (render (parse "1.0.0-SNAPSHOT")) "1.0.0-SNAPSHOT"))
-    (is (= (render (parse "1.0.0")) "1.0.0"))))
+    (is (= (s/render (s/parse "1.0.0-beta+foo")) "1.0.0-beta+foo"))
+    (is (= (s/render (s/parse "1.0.0-SNAPSHOT")) "1.0.0-SNAPSHOT"))
+    (is (= (s/render (s/parse "1.0.0")) "1.0.0"))))
+
+(deftest transform-test
+  (testing "Should increment versions correctly"
+    (are [version incr-fn desired-version] (= desired-version (s/transform incr-fn version))
+
+      "0.0.1" s/increment-patch "0.0.2"
+      "0.1.0" s/increment-minor "0.2.0"
+      "0.1.1" s/increment-minor "0.2.0"
+      "0.1.10" s/increment-major "1.0.0")))
