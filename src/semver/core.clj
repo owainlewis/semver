@@ -1,6 +1,7 @@
 (ns semver.core)
 
-(defrecord Version [major minor patch pre-release metadata])
+(defrecord Version
+    [major minor patch pre-release metadata])
 
 (def ^{:private true} semver
   #"^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$")
@@ -123,7 +124,8 @@
       (is-snapshot? pr))))
 
 (defn sorted
-  "Given a list of semantic version strings, compare them and return them in sorted order"
+  "Given a list of semantic version strings, compare them and return them in sorted order
+   with newest versions first"
   [versions]
   (sort newer? versions))
 
