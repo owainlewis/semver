@@ -130,7 +130,7 @@
   (sort newer? versions))
 
 (defn increment-major
-  "Returns a copy of a given version with the major version icremented"
+  "Returns a copy of a given version with the major version incremented"
   [^Version version]
   (-> version
       (update :major inc)
