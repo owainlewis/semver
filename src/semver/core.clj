@@ -1,7 +1,7 @@
 (ns semver.core)
 
 (defrecord Version
-    [major minor patch pre-release metadata])
+           [major minor patch pre-release metadata])
 
 (def ^{:private true} semver
   #"^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$")
@@ -28,11 +28,11 @@
   (let [{:keys [major minor patch pre-release metadata]} version]
     (cond
       (boolean (and (some? major) (some? minor) (some? patch) (some? pre-release) (some? metadata)))
-        (apply (partial format "%s.%s.%s-%s+%s") [major minor patch pre-release metadata])
+      (apply (partial format "%s.%s.%s-%s+%s") [major minor patch pre-release metadata])
       (boolean (and (some? major) (some? minor) (some? patch) (some? pre-release) (nil? metadata)))
-        (apply (partial format "%s.%s.%s-%s") [major minor patch pre-release])
+      (apply (partial format "%s.%s.%s-%s") [major minor patch pre-release])
       (boolean (and (some? major) (some? minor) (some? patch) (nil? pre-release) (nil? metadata)))
-        (apply (partial format "%s.%s.%s") [major minor patch])
+      (apply (partial format "%s.%s.%s") [major minor patch])
       :default nil)))
 
 (defn- compare-part
@@ -61,10 +61,10 @@
         (and (empty? xs) (empty? ys)) 0
         (and (seq xs) (empty? ys)) -1
         :else
-          (let [fx (first xs) fy (first ys)]
-            (if (= fx fy)
-              (recur (rest xs) (rest ys))
-              (compare-part fx fy)))))))
+        (let [fx (first xs) fy (first ys)]
+          (if (= fx fy)
+            (recur (rest xs) (rest ys))
+            (compare-part fx fy)))))))
 
 (defn- is-snapshot?
   "Returns true if the input version is a snapshot else false"
@@ -120,8 +120,8 @@
 
 (defn snapshot? [^String version]
   (boolean
-    (when-let [pr (:pre-release (parse version))]
-      (is-snapshot? pr))))
+   (when-let [pr (:pre-release (parse version))]
+     (is-snapshot? pr))))
 
 (defn sorted
   "Given a list of semantic version strings, compare them and return them in sorted order
