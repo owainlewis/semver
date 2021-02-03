@@ -1,4 +1,4 @@
-# semver
+# Semver
 
 [![CircleCI](https://circleci.com/gh/owainlewis/java-http-clj.svg?style=svg)](https://circleci.com/gh/owainlewis/semver)
 
