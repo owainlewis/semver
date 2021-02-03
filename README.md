@@ -1,7 +1,5 @@
 # semver
 
-[![Clojars Project](https://img.shields.io/clojars/v/com.owainlewis/semver.svg)](https://clojars.org/com.owainlewis/semver)
-
 [![CircleCI](https://circleci.com/gh/owainlewis/java-http-clj.svg?style=svg)](https://circleci.com/gh/owainlewis/semver)
 
 A pure Clojure implementation of the Semantic Versioning spec. This library allows you to easily parse, validate, sort and modify semantic version strings.
