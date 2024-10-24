@@ -2,7 +2,7 @@
 
 [![CircleCI](https://circleci.com/gh/owainlewis/java-http-clj.svg?style=svg)](https://circleci.com/gh/owainlewis/semver)
 
-A pure Clojure implementation of the Semantic Versioning spec. This library allows you to easily parse, validate, sort and modify semantic version strings.
+A pure Clojure/Script implementation of the Semantic Versioning spec. This library allows you to easily parse, validate, sort and modify semantic version strings.
 
 http://semver.org
 

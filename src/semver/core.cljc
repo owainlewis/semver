@@ -1,4 +1,5 @@
-(ns semver.core)
+(ns semver.core
+  (:require [clojure.string :as str]))
 
 (defrecord Version
            [major minor patch pre-release metadata])
@@ -11,15 +12,20 @@
   [^String version]
   (boolean (re-matches semver version)))
 
+(defn- parse-int
+  [s]
+  #?(:clj (Integer/parseInt s 10)
+     :cljs (js/parseInt s)))
+
 (defn parse
   "Parse a semantic version string returning nil if the input is invalid
    or a Version if the input is valid"
   [^String version]
   (when (valid? version)
     (let [[[_ major minor patch pre-release metadata]] (re-seq semver version)
-          major-version (Integer/parseInt major 10)
-          minor-version (Integer/parseInt minor 10)
-          patch-version (Integer/parseInt patch 10)]
+          major-version (parse-int major)
+          minor-version (parse-int minor)
+          patch-version (parse-int patch)]
       (Version. major-version minor-version patch-version pre-release metadata))))
 
 (defn render
@@ -28,11 +34,11 @@
   (let [{:keys [major minor patch pre-release metadata]} version]
     (cond
       (boolean (and (some? major) (some? minor) (some? patch) (some? pre-release) (some? metadata)))
-      (apply (partial format "%s.%s.%s-%s+%s") [major minor patch pre-release metadata])
+      (str major "." minor "." patch "-" pre-release "+" metadata)
       (boolean (and (some? major) (some? minor) (some? patch) (some? pre-release) (nil? metadata)))
-      (apply (partial format "%s.%s.%s-%s") [major minor patch pre-release])
+      (str major "." minor "." patch "-" pre-release)
       (boolean (and (some? major) (some? minor) (some? patch) (nil? pre-release) (nil? metadata)))
-      (apply (partial format "%s.%s.%s") [major minor patch])
+      (str major "." minor "." patch)
       :default nil)))
 
 (defn- compare-part
@@ -52,8 +58,8 @@
    if all of the preceding identifiers are equal"
   [x y]
   (let [[x-parts y-parts] (map (fn [s]
-                                 (->> (clojure.string/split s #"[.]")
-                                      (remove clojure.string/blank?)))
+                                 (->> (str/split s #"[.]")
+                                      (remove str/blank?)))
                                [x y])]
     (loop [xs x-parts ys y-parts]
       (cond

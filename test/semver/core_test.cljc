@@ -1,7 +1,9 @@
 (ns semver.core-test
-  (:require [clojure.test :refer [deftest testing is are]]
-            [semver.core :as s])
-  (:import [semver.core Version]))
+  (:require [clojure.test :as test :refer [deftest testing is are]]
+            #?(:cljs [semver.core :as s :refer [Version]]
+               :clj [semver.core :as s]))
+  #?(:clj
+     (:import [semver.core Version])))
 
 (def valid-versions ["1.0.0"
                      "1.0.2-SNAPSHOT"
@@ -57,3 +59,5 @@
       "0.1.0" s/increment-minor "0.2.0"
       "0.1.1" s/increment-minor "0.2.0"
       "0.1.10" s/increment-major "1.0.0")))
+
+#?(:cljs (test/run-tests))
