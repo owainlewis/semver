@@ -13,7 +13,13 @@ should change with it.
 
 ## Install
 
-Leiningen:
+`deps.edn`:
+
+```clojure
+com.owainlewis/semver {:mvn/version "0.2.0-SNAPSHOT"}
+```
+
+Leiningen consumers can still depend on the Maven artifact:
 
 ```clojure
 [com.owainlewis/semver "0.2.0-SNAPSHOT"]
@@ -136,29 +142,64 @@ The test suite covers the core SemVer 2.0.0 rules:
 Run tests:
 
 ```sh
-lein test
+clojure -M:test
 ```
 
 Check formatting:
 
 ```sh
-lein cljfmt check
+clojure -M:fmt/check
 ```
 
 Format code:
 
 ```sh
-lein cljfmt fix
+clojure -M:fmt/fix
 ```
+
+Build a jar:
+
+```sh
+clojure -T:build jar
+```
+
+Install locally:
+
+```sh
+clojure -T:build install
+```
+
+Deploy to Clojars:
+
+```sh
+CLOJARS_USERNAME=... CLOJARS_PASSWORD=... clojure -T:build deploy
+```
+
+Release from GitHub Actions:
+
+1. Set `CLOJARS_USERNAME` and `CLOJARS_PASSWORD` as repository secrets.
+2. Create and push a version tag.
+
+```sh
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+The release workflow uses the tag without the leading `v` as the artifact
+version.
 
 ## CI
 
 GitHub Actions runs:
 
-- `lein cljfmt check`
-- `lein test`
+- `clojure -M:fmt/check`
+- `clojure -M:test`
+- `clojure -T:build jar`
 
 CircleCI has been removed.
+
+Leiningen has been replaced by the Clojure CLI, `deps.edn`, and
+`tools.build`.
 
 ## License
 

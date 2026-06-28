@@ -1,12 +1,12 @@
-name: test
+name: release
 
 on:
   push:
-    branches: [master, main]
-  pull_request:
+    tags:
+      - "v*"
 
 jobs:
-  test:
+  clojars:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,9 +19,16 @@ jobs:
           curl -fsSLO https://github.com/clojure/brew-install/releases/latest/download/linux-install.sh
           chmod +x linux-install.sh
           sudo ./linux-install.sh
+      - name: Set release version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
       - name: Check formatting
         run: clojure -M:fmt/check
       - name: Run tests
         run: clojure -M:test
       - name: Build jar
         run: clojure -T:build jar
+      - name: Deploy to Clojars
+        env:
+          CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
+          CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
+        run: clojure -T:build deploy

@@ -1,12 +1,11 @@
 /target
+/.cpcache
 /classes
 /checkouts
 pom.xml
 pom.xml.asc
 *.jar
 *.class
-/.lein-*
-/.lein-failures
 /.nrepl-port
 .hgignore
 .hg/
