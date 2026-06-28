@@ -80,7 +80,12 @@
           (str older " should be older than " newer))))
   (testing "build metadata should not affect precedence"
     (is (s/equal? "1.0.0+build.1" "1.0.0+build.2"))
-    (is (s/equal? "1.0.0-alpha+build.1" "1.0.0-alpha+build.2"))))
+    (is (s/equal? "1.0.0-alpha+build.1" "1.0.0-alpha+build.2")))
+  (testing "pre-release identifiers should compare by SemVer precedence rules"
+    (are [older newer] (s/older? older newer)
+      "1.0.0-alpha.2" "1.0.0-alpha.10"
+      "1.0.0-alpha.1" "1.0.0-alpha.beta"
+      "1.0.0-alpha.1" "1.0.0-alpha.1.1")))
 
 (deftest invalid-comparison-test
   (testing "should reject invalid versions when comparing"
@@ -111,4 +116,6 @@
       "0.1.0" s/increment-minor "0.2.0"
       "0.1.1" s/increment-minor "0.2.0"
       "0.1.10" s/increment-major "1.0.0"
-      "1.0.0-alpha+build.1" s/increment-patch "1.0.1")))
+      "1.0.0-alpha+build.1" s/increment-patch "1.0.1"
+      "1.2.3-alpha+build.1" s/increment-minor "1.3.0"
+      "1.2.3-alpha+build.1" s/increment-major "2.0.0")))
