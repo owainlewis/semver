@@ -1,64 +1,165 @@
-# Semver
+# semver
 
-[![CircleCI](https://circleci.com/gh/owainlewis/java-http-clj.svg?style=svg)](https://circleci.com/gh/owainlewis/semver)
+[![test](https://github.com/owainlewis/semver/actions/workflows/test.yml/badge.svg)](https://github.com/owainlewis/semver/actions/workflows/test.yml)
 
-A pure Clojure implementation of the Semantic Versioning spec. This library allows you to easily parse, validate, sort and modify semantic version strings.
+A small Clojure implementation of [Semantic Versioning 2.0.0](https://semver.org/).
 
-http://semver.org
+It parses, validates, compares, sorts, renders, and increments semantic version
+strings.
 
-## Getting started
+Opinion [high]: This library should stay boring and strict.
+Flip fact: If the official SemVer spec changes, the parser and precedence tests
+should change with it.
 
-[![Clojars Project](https://img.shields.io/clojars/v/io.forward/semver.svg)](https://clojars.org/com.owainlewis/semver)
+## Install
+
+Leiningen:
+
+```clojure
+[com.owainlewis/semver "0.2.0-SNAPSHOT"]
+```
+
+The current source version is `0.2.0-SNAPSHOT`.
 
 ## Usage
 
-All the examples below assume you have included the semver library like this:
-
 ```clojure
-(ns 'foo
-  (:require [semver.core :as s]))
+(ns example
+  (:require [semver.core :as semver]))
 ```
 
-### Parse a version string
+Parse a version:
 
 ```clojure
-(s/parse "1.2.3-SNAPSHOT")
+(semver/parse "1.2.3-alpha.1+build.5")
 
-;; => semver.core.Version{:major 1, :minor 2, :patch 3, :pre-release "SNAPSHOT", :metadata nil}
+;; => #semver.core.Version{:major 1N,
+;;                         :minor 2N,
+;;                         :patch 3N,
+;;                         :pre-release "alpha.1",
+;;                         :metadata "build.5"}
 ```
 
-### Sorting a list of version strings
-
-If you want to sort a list of semantic version strings you can use the `sorted` function to do this.
+Validate a version:
 
 ```clojure
-(s/sorted ["1.2.3", "1.2.3-SNAPSHOT", "2.0.0", "0.1.0-beta3"])
+(semver/valid? "1.2.3")
+;; => true
 
-;; => ("2.0.0" "1.2.3" "1.2.3-SNAPSHOT" "0.1.0-beta3")
+(semver/valid? "01.2.3")
+;; => false
+
+(semver/valid? "1.0.0-alpha.01")
+;; => false
 ```
 
-### Validation
-
-You can use the `valid?` function to check if an input string is a valid semantic version
+Compare versions:
 
 ```clojure
-(s/valid? "1.2.3-beta1") ;; => true
+(semver/newer? "1.0.0" "1.0.0-rc.1")
+;; => true
 
-(s/valid "1.2.3.4") ;; => false
+(semver/older? "1.0.0-alpha.2" "1.0.0-alpha.10")
+;; => true
+
+(semver/equal? "1.0.0+build.1" "1.0.0+build.2")
+;; => true
 ```
 
-### Transforming a version string
-
-A selection of modifiers are available to make it easy to modify version strings in a consistent manner. Simply pass a modifier function to the `transform` function.
+Sort versions newest first:
 
 ```clojure
-(s/transform s/increment-minor "1.0.0" ) ;; => "1.1.0"
-(s/transform s/increment-major "1.0.0" ) ;; => "2.0.0"
+(semver/sorted ["1.0.0-alpha"
+                "1.0.0-alpha.1"
+                "1.0.0-alpha.beta"
+                "1.0.0-beta"
+                "1.0.0-beta.2"
+                "1.0.0-beta.11"
+                "1.0.0-rc.1"
+                "1.0.0"])
+
+;; => ("1.0.0"
+;;     "1.0.0-rc.1"
+;;     "1.0.0-beta.11"
+;;     "1.0.0-beta.2"
+;;     "1.0.0-beta"
+;;     "1.0.0-alpha.beta"
+;;     "1.0.0-alpha.1"
+;;     "1.0.0-alpha")
 ```
+
+Increment versions:
+
+```clojure
+(semver/transform semver/increment-patch "1.0.0-alpha+build.1")
+;; => "1.0.1"
+
+(semver/transform semver/increment-minor "1.0.9")
+;; => "1.1.0"
+
+(semver/transform semver/increment-major "1.9.9")
+;; => "2.0.0"
+```
+
+## API
+
+- `valid?`
+- `parse`
+- `render`
+- `compare-strings`
+- `newer?`
+- `older?`
+- `equal?`
+- `snapshot?`
+- `sorted`
+- `increment-major`
+- `increment-minor`
+- `increment-patch`
+- `transform`
+
+## Spec Coverage
+
+The test suite covers the core SemVer 2.0.0 rules:
+
+- Required `MAJOR.MINOR.PATCH`.
+- No leading zeroes in major, minor, or patch.
+- Valid pre-release and build identifiers.
+- No leading zeroes in numeric pre-release identifiers.
+- Numeric pre-release identifiers compare numerically.
+- Numeric pre-release identifiers have lower precedence than non-numeric identifiers.
+- A normal version has higher precedence than a pre-release version.
+- Build metadata does not affect precedence.
+- Official precedence example order from the SemVer 2.0.0 spec.
+
+## Development
+
+Run tests:
+
+```sh
+lein test
+```
+
+Check formatting:
+
+```sh
+lein cljfmt check
+```
+
+Format code:
+
+```sh
+lein cljfmt fix
+```
+
+## CI
+
+GitHub Actions runs:
+
+- `lein cljfmt check`
+- `lein test`
+
+CircleCI has been removed.
 
 ## License
 
-Copyright © 2020 Owain Lewis
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Eclipse Public License 1.0.

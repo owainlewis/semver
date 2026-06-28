@@ -1,70 +1,93 @@
-(ns semver.core)
+(ns semver.core
+  (:require [clojure.string :as str]))
 
 (defrecord Version
            [major minor patch pre-release metadata])
 
+(def ^:private numeric-identifier
+  #"0|[1-9][0-9]*")
+
+(def ^:private non-numeric-identifier
+  #"[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*")
+
+(def ^:private pre-release-identifier
+  (str "(?:" numeric-identifier "|" non-numeric-identifier ")"))
+
 (def ^{:private true} semver
-  #"^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$")
+  (re-pattern
+   (str "^(0|[1-9][0-9]*)"
+        "\\.(0|[1-9][0-9]*)"
+        "\\.(0|[1-9][0-9]*)"
+        "(?:-(" pre-release-identifier
+        "(?:\\." pre-release-identifier ")*))?"
+        "(?:\\+([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?$")))
+
+(defn- numeric-identifier?
+  [identifier]
+  (boolean (re-matches numeric-identifier identifier)))
+
+(defn- parse-number
+  [s]
+  (bigint s))
 
 (defn valid?
-  "Returns true if an input string is a valid semantic version string"
-  [^String version]
-  (boolean (re-matches semver version)))
+  "Return true if version is a valid Semantic Versioning 2.0.0 string."
+  [version]
+  (boolean
+   (and (string? version)
+        (re-matches semver version))))
 
 (defn parse
-  "Parse a semantic version string returning nil if the input is invalid
-   or a Version if the input is valid"
-  [^String version]
-  (when (valid? version)
-    (let [[[_ major minor patch pre-release metadata]] (re-seq semver version)
-          major-version (Integer/parseInt major 10)
-          minor-version (Integer/parseInt minor 10)
-          patch-version (Integer/parseInt patch 10)]
-      (Version. major-version minor-version patch-version pre-release metadata))))
+  "Parse version into a Version record.
+
+  Return nil when version is not a valid Semantic Versioning 2.0.0 string."
+  [version]
+  (when-let [[_ major minor patch pre-release metadata] (and (string? version)
+                                                             (re-matches semver version))]
+    (->Version (parse-number major)
+               (parse-number minor)
+               (parse-number patch)
+               pre-release
+               metadata)))
 
 (defn render
-  "Takes a semantic version type and renders it back as a string"
+  "Render a Version record as a semantic version string."
   [^Version version]
   (let [{:keys [major minor patch pre-release metadata]} version]
-    (cond
-      (boolean (and (some? major) (some? minor) (some? patch) (some? pre-release) (some? metadata)))
-      (apply (partial format "%s.%s.%s-%s+%s") [major minor patch pre-release metadata])
-      (boolean (and (some? major) (some? minor) (some? patch) (some? pre-release) (nil? metadata)))
-      (apply (partial format "%s.%s.%s-%s") [major minor patch pre-release])
-      (boolean (and (some? major) (some? minor) (some? patch) (nil? pre-release) (nil? metadata)))
-      (apply (partial format "%s.%s.%s") [major minor patch])
-      :default nil)))
+    (when (and (some? major) (some? minor) (some? patch))
+      (str major "." minor "." patch
+           (when pre-release
+             (str "-" pre-release))
+           (when metadata
+             (str "+" metadata))))))
 
 (defn- compare-part
-  "Identifiers consisting of only digits are compared numerically and
-   identifiers with letters or hyphens are compared lexically in ASCII sort order.
-   Numeric identifiers always have lower precedence than non-numeric identifiers."
+  "Compare one pre-release identifier by SemVer 2.0.0 precedence rules."
   [x y]
-  (compare x y))
+  (let [x-numeric? (numeric-identifier? x)
+        y-numeric? (numeric-identifier? y)]
+    (cond
+      (and x-numeric? y-numeric?) (compare (parse-number x) (parse-number y))
+      x-numeric? -1
+      y-numeric? 1
+      :else (compare x y))))
 
 (defn- compare-split-parts
-  "Precedence for two pre-release versions with the same major, minor, and patch version MUST
-   be determined by comparing each dot separated identifier from left to right until a difference is
-   found as follows: identifiers consisting of only digits are compared numerically and
-   identifiers with letters or hyphens are compared lexically in ASCII sort order.
-   Numeric identifiers always have lower precedence than non-numeric identifiers.
-   A larger set of pre-release fields has a higher precedence than a smaller set,
-   if all of the preceding identifiers are equal"
+  "Compare dot-separated pre-release identifiers."
   [x y]
-  (let [[x-parts y-parts] (map (fn [s]
-                                 (->> (clojure.string/split s #"[.]")
-                                      (remove clojure.string/blank?)))
+  (let [[x-parts y-parts] (map (fn [s] (str/split s #"\."))
                                [x y])]
     (loop [xs x-parts ys y-parts]
       (cond
-        (and (empty? xs) (seq? ys)) 1
         (and (empty? xs) (empty? ys)) 0
-        (and (seq xs) (empty? ys)) -1
+        (empty? xs) -1
+        (empty? ys) 1
         :else
         (let [fx (first xs) fy (first ys)]
-          (if (= fx fy)
-            (recur (rest xs) (rest ys))
-            (compare-part fx fy)))))))
+          (let [comparison (compare-part fx fy)]
+            (if (zero? comparison)
+              (recur (rest xs) (rest ys))
+              comparison)))))))
 
 (defn- is-snapshot?
   "Returns true if the input version is a snapshot else false"
@@ -72,15 +95,12 @@
   (= "SNAPSHOT" pre-release))
 
 (defn- compare-pre-release
-  "When major, minor, and patch are equal, a pre-release version has lower precedence than a normal version"
+  "Compare two optional pre-release strings."
   [x y]
   (cond
-    (and (is-snapshot? x) (not (is-snapshot? y))) -1
-    (and (not (is-snapshot? x)) (is-snapshot? y)) 1
     (and (nil? x) (some? y)) 1
     (and (nil? x) (nil? y)) 0
     (and (some? x) (nil? y)) -1
-    ;; Comparing each dot separated identifier from left to right until a difference is found
     :else (compare-split-parts x y)))
 
 (defn- compare-semver
@@ -90,18 +110,25 @@
    as follows: Major, minor, and patch versions are always compared numerically.
    Example: 1.0.0 < 2.0.0 < 2.1.0 < 2.1.1"
   [v1 v2]
-  (if (= (:major v1) (:major v2))
-    (if (= (:minor v1) (:minor v2))
-      (if (= (:patch v1) (:patch v2))
-        (compare-pre-release (:pre-release v1) (:pre-release v2))
-        (compare (:patch v1) (:patch v2)))
-      (compare (:minor v1) (:minor v2)))
-    (compare (:major v1) (:major v2))))
+  (let [core-comparison (compare [(:major v1) (:minor v1) (:patch v1)]
+                                 [(:major v2) (:minor v2) (:patch v2)])]
+    (if (zero? core-comparison)
+      (compare-pre-release (:pre-release v1) (:pre-release v2))
+      core-comparison)))
+
+(defn- parse!
+  [version]
+  (or (parse version)
+      (throw (ex-info "Invalid semantic version" {:version version}))))
 
 (defn compare-strings
-  "Compare two semantic version strings"
+  "Compare two semantic version strings.
+
+  Return a negative number when v1 is older, zero when v1 has the same
+  precedence, and a positive number when v1 is newer. Build metadata is ignored
+  for precedence."
   [^String v1 ^String v2]
-  (compare-semver (parse v1) (parse v2)))
+  (compare-semver (parse! v1) (parse! v2)))
 
 (defn newer?
   "Returns true if v1 is newer than v2 else false"
@@ -127,7 +154,7 @@
   "Given a list of semantic version strings, compare them and return them in sorted order
    with newest versions first"
   [versions]
-  (sort newer? versions))
+  (sort #(compare-strings %2 %1) versions))
 
 (defn increment-major
   "Returns a copy of a given version with the major version incremented"
@@ -135,19 +162,26 @@
   (-> version
       (update :major inc)
       (assoc :minor 0)
-      (assoc :patch 0)))
+      (assoc :patch 0)
+      (assoc :pre-release nil)
+      (assoc :metadata nil)))
 
 (defn increment-minor
   "Returns a copy of the given version with the minor version incremented"
   [^Version version]
   (-> version
       (update :minor inc)
-      (assoc :patch 0)))
+      (assoc :patch 0)
+      (assoc :pre-release nil)
+      (assoc :metadata nil)))
 
 (defn increment-patch
   "Returns a copy of the given version with the patch version incremented"
   [^Version version]
-  (update version :patch inc))
+  (-> version
+      (update :patch inc)
+      (assoc :pre-release nil)
+      (assoc :metadata nil)))
 
 (defn transform
   "Transform a version string by applying a modifier function
