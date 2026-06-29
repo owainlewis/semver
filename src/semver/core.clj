@@ -26,10 +26,6 @@
   [identifier]
   (boolean (re-matches numeric-identifier identifier)))
 
-(defn- parse-number
-  [s]
-  (bigint s))
-
 (defn valid?
   "Return true if version is a valid Semantic Versioning 2.0.0 string."
   [version]
@@ -44,9 +40,9 @@
   [version]
   (when-let [[_ major minor patch pre-release metadata] (and (string? version)
                                                              (re-matches semver version))]
-    (->Version (parse-number major)
-               (parse-number minor)
-               (parse-number patch)
+    (->Version (bigint major)
+               (bigint minor)
+               (bigint patch)
                pre-release
                metadata)))
 
@@ -67,32 +63,10 @@
   (let [x-numeric? (numeric-identifier? x)
         y-numeric? (numeric-identifier? y)]
     (cond
-      (and x-numeric? y-numeric?) (compare (parse-number x) (parse-number y))
+      (and x-numeric? y-numeric?) (compare (bigint x) (bigint y))
       x-numeric? -1
       y-numeric? 1
       :else (compare x y))))
-
-(defn- compare-split-parts
-  "Compare dot-separated pre-release identifiers."
-  [x y]
-  (let [[x-parts y-parts] (map (fn [s] (str/split s #"\."))
-                               [x y])]
-    (loop [xs x-parts ys y-parts]
-      (cond
-        (and (empty? xs) (empty? ys)) 0
-        (empty? xs) -1
-        (empty? ys) 1
-        :else
-        (let [fx (first xs) fy (first ys)]
-          (let [comparison (compare-part fx fy)]
-            (if (zero? comparison)
-              (recur (rest xs) (rest ys))
-              comparison)))))))
-
-(defn- is-snapshot?
-  "Returns true if the input version is a snapshot else false"
-  [pre-release]
-  (= "SNAPSHOT" pre-release))
 
 (defn- compare-pre-release
   "Compare two optional pre-release strings."
@@ -101,7 +75,15 @@
     (and (nil? x) (some? y)) 1
     (and (nil? x) (nil? y)) 0
     (and (some? x) (nil? y)) -1
-    :else (compare-split-parts x y)))
+    :else
+    (let [x-parts (str/split x #"\.")
+          y-parts (str/split y #"\.")]
+      (or (some (fn [[x-part y-part]]
+                  (let [comparison (compare-part x-part y-part)]
+                    (when-not (zero? comparison)
+                      comparison)))
+                (map vector x-parts y-parts))
+          (compare (count x-parts) (count y-parts))))))
 
 (defn- compare-semver
   "Compare two semantic versions
@@ -148,7 +130,7 @@
 (defn snapshot? [^String version]
   (boolean
    (when-let [pr (:pre-release (parse version))]
-     (is-snapshot? pr))))
+     (= "SNAPSHOT" pr))))
 
 (defn sorted
   "Given a list of semantic version strings, compare them and return them in sorted order
@@ -156,32 +138,34 @@
   [versions]
   (sort #(compare-strings %2 %1) versions))
 
+(defn- release-version
+  [^Version version]
+  (-> version
+      (assoc :pre-release nil)
+      (assoc :metadata nil)))
+
 (defn increment-major
   "Returns a copy of a given version with the major version incremented"
   [^Version version]
-  (-> version
-      (update :major inc)
-      (assoc :minor 0)
-      (assoc :patch 0)
-      (assoc :pre-release nil)
-      (assoc :metadata nil)))
+  (release-version
+   (assoc version
+          :major (inc (:major version))
+          :minor 0
+          :patch 0)))
 
 (defn increment-minor
   "Returns a copy of the given version with the minor version incremented"
   [^Version version]
-  (-> version
-      (update :minor inc)
-      (assoc :patch 0)
-      (assoc :pre-release nil)
-      (assoc :metadata nil)))
+  (release-version
+   (assoc version
+          :minor (inc (:minor version))
+          :patch 0)))
 
 (defn increment-patch
   "Returns a copy of the given version with the patch version incremented"
   [^Version version]
-  (-> version
-      (update :patch inc)
-      (assoc :pre-release nil)
-      (assoc :metadata nil)))
+  (release-version
+   (update version :patch inc)))
 
 (defn transform
   "Transform a version string by applying a modifier function
@@ -194,4 +178,4 @@
   "
   [modifier version]
   (when-let [parsed-version (parse version)]
-    (render (apply modifier [parsed-version]))))
+    (render (modifier parsed-version))))
